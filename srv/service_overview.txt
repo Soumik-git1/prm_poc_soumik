@@ -1,0 +1,37 @@
+//  SERVICE OVERVIEW
+//  ─────────────────────────────────────────────────────────────
+//  Service  : PartnerService
+//  OData URL: /odata/v4/partner
+//
+//  EXPOSED ENTITIES
+//  ┌─────────────────────────┬───────────┬───────────────────────────────────┐
+//  │ Service Entity          │ Access    │ Notes                             │
+//  ├─────────────────────────┼───────────┼───────────────────────────────────┤
+//  │ Partner                 │ CRUD      │ Root entity                       │
+//  │ PartnerTypes            │ CRUD      │ Composition child of Partner      │
+//  │ Dimensions              │ CRUD      │ Composition child of PartnerTypes │
+//  │ C_PartnerTypeDimMap     │ Read-only │ Customizing – admin maintained    │
+//  │ VH_Country              │ Read-only │ Value help                        │
+//  │ VH_PartnerStatus        │ Read-only │ Value help                        │
+//  │ VH_PartnerLevel         │ Read-only │ Value help                        │
+//  │ VH_PartnerType          │ Read-only │ Value help                        │
+//  │ VH_PTStatus             │ Read-only │ Value help                        │
+//  │ VH_Dimension            │ Read-only │ Value help                        │
+//  │ VH_DimStatus            │ Read-only │ Value help                        │
+//  │ ValueTexts              │ Read-only │ Common text table                 │
+//  └─────────────────────────┴───────────┴───────────────────────────────────┘
+//
+//  BOUND ACTIONS
+//    Partner.recalculateStatus()   – manually re-trigger status cascade
+//
+//  AUTO-COMPUTED FIELDS  (never set by client – handled in event handlers)
+//    Partner.Partner_status   computed after PartnerTypes CREATE/UPDATE
+//    PartnerTypes.PT_Status   computed after Dimensions CREATE/UPDATE
+//
+//  VALIDATION  (enforced in event handlers on Dimensions CREATE)
+//    (PartnerTypes.Partner_Type, Dimensions.Dim_id) must exist
+//    in C_PartnerTypeDimMap – rejected with 400 if not found
+//
+//  IMPLEMENTATION FILE
+//    srv/partner-service.js  (event handler stubs documented at end of file)
+// ============================================================

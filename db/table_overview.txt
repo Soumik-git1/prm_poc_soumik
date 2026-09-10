@@ -1,0 +1,30 @@
+ TABLE OVERVIEW
+ ─────────────────────────────────────────────────────────────
+ MAIN ENTITIES  (have UUID key ID + original String business key)
+   Partner              YBP_D_PARTNER
+   PartnerTypes         YBP_D_PARTNERTYPES
+   Dimensions           YPT_D_DIMENSIONS
+
+ CUSTOMIZING  (original composite business key – no UUID)
+   C_PartnerTypeDimMap  YBP_C_PT_DIM_MAP
+
+ VALUE HELP  (original String PK – no UUID)
+   VH_Country           YBP_D_VH_COUNTRY
+   VH_PartnerStatus     YBP_D_VH_PSTATUS
+   VH_PartnerLevel      YBP_D_VH_PLEVEL
+   VH_PartnerType       YBP_D_VH_PTYPE
+   VH_PTStatus          YBP_D_VH_PTSTATUS
+   VH_Dimension         YBP_D_VH_DIM
+   VH_DimStatus         YBP_D_VH_DIMSTATUS
+
+ TEXT
+   ValueTexts           YBP_D_TEXTS   – Domain + Code + Language composite key
+
+ STATUS CASCADE  (auto-computed via service event handlers)
+   Dim_Status = E0005 Authorized   ⟹  PT_Status  = E0005 Operational
+   PT_Status  = E0005 Operational  ⟹  Partner_status = E0002 Active
+   Reverse: revert when none qualify
+
+ CUSTOMIZING VALIDATION  (on Dimension CREATE)
+   Check (Partner_Type, Dim_id) exists in C_PartnerTypeDimMap.
+   Reject with error if not found.

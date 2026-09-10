@@ -1,0 +1,34 @@
+Domain,Code,Language,Description
+PSTATUS,E0001,EN,Prospective Partner
+PSTATUS,E0002,EN,Active
+PSTATUS,E0003,EN,Discontinued
+PLEVEL,GOLD,EN,Gold
+PLEVEL,SILV,EN,Silver
+PLEVEL,BRNZ,EN,Bronze
+PTYPE,YVAR,EN,PE Sell
+PTYPE,YRUN,EN,PE RUN
+PTYPE,YBLD,EN,PE Build
+PTYPE,YSRVP,EN,PE Service
+PTSTATUS,E0001,EN,Application in Process
+PTSTATUS,E0002,EN,Application Accepted
+PTSTATUS,E0003,EN,Rejected
+PTSTATUS,E0004,EN,Agreement Signed
+PTSTATUS,E0005,EN,Operational
+PTSTATUS,E0006,EN,Under Review
+PTSTATUS,E0007,EN,Notified of Termination
+PTSTATUS,E0008,EN,In Termination
+PTSTATUS,E0009,EN,Terminated
+DIM,YABC,EN,Market Reach
+DIM,YDEF,EN,Solution Competency
+DIM,YGHI,EN,Customer Success
+DIMSTATUS,E0001,EN,Requested
+DIMSTATUS,E0002,EN,Opted out
+DIMSTATUS,E0003,EN,Rejected
+DIMSTATUS,E0004,EN,For evaluation
+DIMSTATUS,E0005,EN,Authorized
+DIMSTATUS,E0006,EN,Authorization at risk
+DIMSTATUS,E0007,EN,De-authorized
+DIMSTATUS,E0008,EN,Candidate
+DIMSTATUS,E0009,EN,Grace Period
+DIMSTATUS,E0010,EN,Discontinued
+DIMSTATUS,E0011,EN,Evaluation Period Expired

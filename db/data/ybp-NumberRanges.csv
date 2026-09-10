@@ -1,0 +1,3 @@
+NR_Object,Prefix,Digits,From_No,To_No,Current_No
+PARTNER,P,7,1001,9999999,1005
+MEMBERSHIP,M,7,1,9999999,7

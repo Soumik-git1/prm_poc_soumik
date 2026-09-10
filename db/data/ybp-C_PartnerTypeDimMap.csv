@@ -1,0 +1,8 @@
+Partner_Type,Dim_id,Is_Mandatory
+YVAR,YABC,false
+YVAR,YDEF,false
+YRUN,YABC,true
+YRUN,YGHI,false
+YBLD,YDEF,false
+YBLD,YGHI,false
+YSRVP,YABC,false
