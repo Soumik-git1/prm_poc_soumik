@@ -51,6 +51,7 @@ Accept: application/json
 ###                   reaches PT_Status = E0005 (Operational)
 ### ============================================================
 
+###=======New partner creation===================
 POST http://localhost:4004/partner/Partner
 content
 Content-Type: application/json
@@ -60,6 +61,19 @@ Accept: application/json
   "Name_org"      : "Test partner3", 
   "Country"       : "DE",
   "Partner_level" : "GOLD"
+}
+
+
+### ── PARTNER PATCH CALLS ─────────────────────────────────────
+
+### 7.1 Update partner name
+PATCH http://localhost:4004/partner/Partner(10000000-0000-0000-0000-000000000001)
+Content-Type: application/json
+x-csrf-token: fetch
+Accept: application/json
+
+{
+  "Name_org": "Acme Technologies GmbH (Updated)"
 }
 
 ###Partner type/membership creation under partner
@@ -74,6 +88,206 @@ Accept: application/json
   "Valid_from"      : "2025-01-01",
   "valid_to"        : "9999-12-31",
   "Partner_Type"    : "YVAR",
+  //"PT_Status"       : "E0004",
+  "PT_Status_Reason": ""
+}
+
+####Start of http call==============Partner type===============================###
+####====Partner Type validation check for partner type post call
+POST http://localhost:4004/partner/PartnerTypes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Partner_ID"      : "198a762e-0881-4963-99bd-f4eb02a5ee70", 
+  "Valid_from"      : "2025-01-01",
+  "valid_to"        : "9999-12-31",
+  "Partner_Type"    : "ABCD",
   "PT_Status"       : "E0004",
   "PT_Status_Reason": ""
+}
+
+####====duplicate partner type check in post
+POST http://localhost:4004/partner/PartnerTypes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Partner_ID"      : "10000000-0000-0000-0000-000000000001", 
+  "Valid_from"      : "2025-01-01",
+  "valid_to"        : "9999-12-31",
+  "Partner_Type"    : "YVAR",
+  "PT_Status"       : "E0004",
+  "PT_Status_Reason": ""
+}
+
+#####Partner status recalculation
+POST http://localhost:4004/partner/Partner
+content
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Name_org"      : "Test partner3", 
+  "Country"       : "DE",
+  "Partner_level" : "GOLD"
+}
+
+###
+POST http://localhost:4004/partner/PartnerTypes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Partner_ID"      : "3cccd419-3f12-4208-a5c9-91f34fd29c18", 
+  "Valid_from"      : "2025-01-01",
+  "valid_to"        : "9999-12-31",
+  "Partner_Type"    : "YVAR",
+  "PT_Status"       : "E0004",
+  "PT_Status_Reason": ""
+}
+
+###10000000-0000-0000-0000-000000000005
+POST http://localhost:4004/partner/PartnerTypes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Partner_ID"      : "10000000-0000-0000-0000-000000000005", 
+  "Valid_from"      : "2025-01-01",
+  "valid_to"        : "9999-12-31",
+  "Partner_Type"    : "YVAR",
+  //"Partner_Type"    : "YRUN",
+  //"PT_Status"       : "E0004",
+  "PT_Status_Reason": ""
+}
+
+###partner type patch call
+PATCH http://localhost:4004/partner/PartnerTypes(ec6609f8-189e-4d4a-a333-b7e45c20c718)
+Content-Type: application/json
+Accept: application/json
+
+{
+  "PT_Status"       : "E0005",
+  "PT_Status_Reason": "Authorization granted"
+}
+
+####End of http call==============Partner type===============================###
+
+###=====Country validation check for partner post call
+POST http://localhost:4004/partner/Partner
+content
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Name_org"      : "Test partner4", 
+  "Country"       : "AB",
+  "Partner_level" : "GOLD"
+}
+
+###=====Partner level validation check for partner post call
+POST http://localhost:4004/partner/Partner
+content
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Name_org"      : "Test partner4", 
+  "Country"       : "DE",
+  "Partner_level" : "ABC"
+}
+
+
+###======Dimension=================================
+POST http://localhost:4004/partner/Dimensions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "PartnerType_ID"   : "20000000-0000-0000-0000-000000000001",
+  "Dim_id"           : "YABC",
+  "Valid_from"       : "2026-09-15",
+  "valid_to"         : "9999-12-31",
+  //"Dim_Status"       : "E0005",
+  "Dim_Status_Reason": ""
+}
+
+###
+PATCH http://localhost:4004/partner/Dimensions(30000000-0000-0000-0000-000000000001)
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Dim_Status"       : "E0001",
+  "Dim_Status_Reason": "Requested"
+}
+
+####=====Complete cycle test======================
+####Create partner
+POST http://localhost:4004/partner/Partner
+content
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Name_org"      : "Test partner Demo", 
+  "Country"       : "DE",
+  "Partner_level" : "GOLD"
+}
+
+###Add partner types
+POST http://localhost:4004/partner/PartnerTypes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Partner_ID"      : "125956d6-e6e1-4d37-b2cd-59a1b590dbe0", 
+  "Valid_from"      : "2026-09-15",
+  "valid_to"        : "9999-12-31",
+  //"Partner_Type"    : "YVAR",
+  "Partner_Type"    : "YRUN",
+  //"PT_Status"       : "E0004",
+  "PT_Status_Reason": ""
+}
+
+###Add dimensions
+POST http://localhost:4004/partner/Dimensions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "PartnerType_ID"   : "60388580-268a-4bd8-8d06-f549e8ca578c",
+  "Dim_id"           : "YABC",
+  "Valid_from"       : "2026-09-15",
+  "valid_to"         : "9999-12-31",
+  //"Dim_Status"       : "E0005",
+  "Dim_Status_Reason": ""
+}
+
+###
+POST http://localhost:4004/partner/Dimensions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "PartnerType_ID"   : "60388580-268a-4bd8-8d06-f549e8ca578c",
+  "Dim_id"           : "YDEF",
+  "Valid_from"       : "2026-09-15",
+  "valid_to"         : "9999-12-31",
+  //"Dim_Status"       : "E0005",
+  "Dim_Status_Reason": ""
+}
+
+
+###Change Dimension status
+PATCH http://localhost:4004/partner/Dimensions(6c983db6-12fc-4690-8eeb-ac2cf085fe7f)
+Content-Type: application/json
+Accept: application/json
+
+{
+  //"Dim_Status"       : "E0001", 
+  "Dim_Status"       : "E0005",
+  //"Dim_Status_Reason": "Requested"
+  "Dim_Status_Reason": "Authorized"
 }

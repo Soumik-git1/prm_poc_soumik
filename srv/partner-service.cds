@@ -273,11 +273,12 @@ annotate PartnerService.PartnerTypes with @(
     Valid_from       @title: 'Valid From';
     valid_to         @title: 'Valid To';
     Partner_Type     @title: 'Partner Type';
-    PT_Status        @title: 'Membership Status'  @Core.Computed: true;
+    PT_Status        @title: 'Membership Status'; //@Core.Computed: true
     PT_Status_Reason @title: 'Status Reason';
     createdAt        @title: 'Created On';
     createdBy        @title: 'Created By';
-
+    //Note: @Core.Computed: true should only be on fields that are always set by the server and never by the client — like Partner_status on Partner (which your handler always sets). PT_Status on PartnerTypes is set by the client on create, so it must not have that annotation.
+        //After removing it, your POST with "PT_Status": "E0004" will be saved correctly
     // ── Value helps ────────────────────────────────────────────
     Partner_Type @(Common.ValueList: {
         CollectionPath: 'VH_PartnerType',

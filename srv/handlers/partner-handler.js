@@ -28,6 +28,7 @@
 // ============================================================
 
 const cds = require('@sap/cds'); //Imports the CAP framework.
+const { SELECT } = require('@sap/cds/lib/ql/cds-ql');
 
 //Extends cds.ApplicationService so you can intercept CRUD operations.
 module.exports = class PartnerService extends cds.ApplicationService {
@@ -46,6 +47,26 @@ module.exports = class PartnerService extends cds.ApplicationService {
 
         this.before('CREATE', 'Partner', async (req) => {
 
+
+            // ── Country validation ────────────────────────────────────
+            if (req.data.Country) {
+                const country = await SELECT.one.from('ybp.VH_Country')
+                    .where({ Country_Id: req.data.Country });
+
+                if (!country)
+                    return req.error(400, `Country '${req.data.Country}' does not exist. Check VH_Country for valid values.`);
+            }
+
+            //---Partner Level validation--------------------
+            if (req.data.Partner_level) {
+                const partner_level = await SELECT.one.from('ybp.VH_PartnerLevel').where({ Level_Id: req.data.Partner_level });
+
+                if (!partner_level)
+                    return req.error(400, `Partner level given '${req.data.Partner_level}' is not valid`);
+
+            }
+
+            //----Number Range
             const nr = await SELECT.one.from('ybp.NumberRanges')
                 .where({ NR_Object: 'PARTNER' });
 
@@ -66,47 +87,34 @@ module.exports = class PartnerService extends cds.ApplicationService {
 
             if (!req.data.Partner_status)
                 req.data.Partner_status = 'E0001';
+
+
         });
-
-
-        // this.before('CREATE', 'Partner', async (req) => {
-        //     // const { NumberRanges } = this.entities;//commenting this to check
-
-        //     // const nr = await SELECT.one.from(NumberRanges)
-        //     //     .where({ NR_Object: 'PARTNER' });
-
-        //     const nr = await SELECT.one.from('ybp.NumberRanges')
-        //         .where({ NR_Object: 'PARTNER' });
-
-        //     if (!nr)
-        //         return req.error(500, 'Number range PARTNER not configured in NumberRanges table');
-
-        //     const next = nr.Current_No + 1;
-
-        //     if (next > nr.To_No)
-        //         return req.error(500, `Number range PARTNER exhausted (max: ${nr.To_No})`);
-
-        //     // await UPDATE(NumberRanges)
-        //     //     .set({ Current_No: next })
-        //     //     .where({ NR_Object: 'PARTNER' });
-
-        //     await UPDATE('ybp.NumberRanges')
-        //         .set({ Current_No: next })
-        //         .where({ NR_Object: 'PARTNER' });                
-
-        //     // Format: Prefix + zero-padded counter → e.g. "P" + "0001006" = "P0001006"
-        //     req.data.Partner_Id = nr.Prefix + String(next).padStart(nr.Digits, '0');
-
-        //     if (!req.data.Partner_status)
-        //         req.data.Partner_status = 'E0001';
-        // });
-
 
         // // ── 2. BEFORE CREATE PartnerTypes ────────────────────────────────
         // //
         // //  Sets req.data.Membership_id from the MEMBERSHIP number range row.
 
         this.before('CREATE', 'PartnerTypes', async (req) => {
+
+            //------Partner type validation-------------------
+            if (req.data.Partner_Type) {
+                const partner_type = await SELECT.one.from('ybp.VH_PartnerType').where({ Type_Id: req.data.Partner_Type });
+
+                if (!partner_type) return req.error(400, `Given Partner Type '${req.data.Partner_Type}' is not valid`);
+            }
+
+            //-----Duplicate active partner type validation-------
+            if (req.data.Partner_ID && req.data.Partner_Type) {
+                const existing = await SELECT.one.from('ybp.PartnerTypes')
+                    .where`Partner_ID = ${req.data.Partner_ID} 
+                                AND Partner_Type = ${req.data.Partner_Type} 
+                                AND PT_Status NOT IN ${['E0003', 'E0009']}`;;
+
+                if (existing)
+                    return req.error(400,
+                        `Partner Type '${req.data.Partner_Type}' already has an active membership for this partner. Terminate the existing membership before creating a new one.`);
+            }
 
             const nr = await SELECT.one.from('ybp.NumberRanges')
                 .where({ NR_Object: 'MEMBERSHIP' });
@@ -116,7 +124,7 @@ module.exports = class PartnerService extends cds.ApplicationService {
 
             const next = parseInt(nr.Current_No, 10) + 1;
 
-            if (next > parseInt(nr.To_No ,10))
+            if (next > parseInt(nr.To_No, 10))
                 return req.error(500, `Number range MEMBERSHIP exhausted (max: ${nr.To_No})`);
 
             await UPDATE('ybp.NumberRanges')
@@ -124,133 +132,130 @@ module.exports = class PartnerService extends cds.ApplicationService {
                 .where({ NR_Object: 'MEMBERSHIP' });
 
             req.data.Membership_id = nr.Prefix + String(next).padStart(nr.Digits, '0');
+
+            if (!req.data.PT_Status)
+                req.data.PT_Status = 'E0001';
+
         });
 
-        // this.before('CREATE', 'PartnerTypes', async (req) => {
-        //     const { NumberRanges } = this.entities;
+        this.after(['CREATE', 'UPDATE'], 'PartnerTypes', async (data, req) => {
 
-        //     const nr = await SELECT.one.from(NumberRanges)
-        //         .where({ NR_Object: 'MEMBERSHIP' });
+            console.log('>>> after PartnerTypes fired, data:', JSON.stringify(data));
+            console.log('>>> Partner_ID:', data.Partner_ID);
+            let partnerId = data.Partner_ID;
+            //For POST call for partner type
+            if (data.Partner_ID)
+                await this._recalculatePartnerStatus(data.Partner_ID);
 
-        //     if (!nr)
-        //         return req.error(500, 'Number range MEMBERSHIP not configured in NumberRanges table');
+            if (!data.Partner_ID) {
+                // For PATCH: data only has changed fields; get key from URL params
+                const ptId = data.ID || req.params?.[0]?.ID;
+                if (ptId) {
+                    const pt = await SELECT.one('Partner_ID')
+                        .from('ybp.PartnerTypes')
+                        .where({ ID: ptId });
+                    partnerId = pt?.Partner_ID;
+                }
+            }
 
-        //     const next = nr.Current_No + 1;
-
-        //     if (next > nr.To_No)
-        //         return req.error(500, `Number range MEMBERSHIP exhausted (max: ${nr.To_No})`);
-
-        //     await UPDATE(NumberRanges)
-        //         .set({ Current_No: next })
-        //         .where({ NR_Object: 'MEMBERSHIP' });
-
-        //     req.data.Membership_id = nr.Prefix + String(next).padStart(nr.Digits, '0');
-        // });
-
-
-        // // ── 3. BEFORE CREATE Dimensions – customizing validation ─────────
-        // //
-        // //  Validates that (Partner_Type, Dim_id) exists in C_PartnerTypeDimMap.
-        // //  Rejects with 400 if the combination is not allowed.
-
-        // this.before('CREATE', 'Dimensions', async (req) => {
-        //     const { PartnerType_ID, Dim_id } = req.data;
-
-        //     const pt = await SELECT.one('Partner_Type')
-        //         .from('ybp.PartnerTypes')
-        //         .where({ ID: PartnerType_ID });
-
-        //     if (!pt)
-        //         return req.error(404, `Parent membership ${PartnerType_ID} not found`);
-
-        //     const allowed = await SELECT.one
-        //         .from('ybp.C_PartnerTypeDimMap')
-        //         .where({ Partner_Type: pt.Partner_Type, Dim_id: Dim_id });
-
-        //     if (!allowed)
-        //         return req.error(400,
-        //             `Dimension '${Dim_id}' is not allowed for partner type '${pt.Partner_Type}'`);
-        // });
+            if (partnerId) await this._recalculatePartnerStatus(partnerId);
+        });
 
 
-        // // ── 4. AFTER CREATE/UPDATE Dimensions – PT_Status cascade ────────
+        // ── 3. BEFORE CREATE Dimensions – customizing validation ─────────
+        //
+        //  Validates that (Partner_Type, Dim_id) exists in C_PartnerTypeDimMap.
+        //  Rejects with 400 if the combination is not allowed.
 
-        // this.after(['CREATE', 'UPDATE'], 'Dimensions', async (data, req) => {
-        //     const { PartnerType_ID } = data;
+        this.before('CREATE', 'Dimensions', async (req) => {
+            const { PartnerType_ID, Dim_id } = req.data;
 
-        //     const authorized = await SELECT.one
-        //         .from('ybp.Dimensions')
-        //         .where({ PartnerType_ID, Dim_Status: 'E0005' });
+            const pt = await SELECT.one('Partner_Type')
+                .from('ybp.PartnerTypes')
+                .where({ ID: PartnerType_ID });
 
-        //     const newPTStatus = authorized ? 'E0005' : 'E0006';
+            if (!pt)
+                return req.error(404, `Parent membership ${PartnerType_ID} not found`);
 
-        //     await UPDATE('ybp.PartnerTypes')
-        //         .set({ PT_Status: newPTStatus })
-        //         .where({ ID: PartnerType_ID });
+            const allowed = await SELECT.one
+                .from('ybp.C_PartnerTypeDimMap')
+                .where({ Partner_Type: pt.Partner_Type, Dim_id: Dim_id });
 
-        //     const pt = await SELECT.one('Partner_ID')
-        //         .from('ybp.PartnerTypes')
-        //         .where({ ID: PartnerType_ID });
+            if (!allowed)
+                return req.error(400,
+                    `Dimension '${Dim_id}' is not allowed for partner type '${pt.Partner_Type}'`);
 
-        //     if (pt) await this._recalculatePartnerStatus(pt.Partner_ID);
-        // });
+            // Duplicaet dimension creation not allowed
+            if (req.data.PartnerType_ID && req.data.Dim_id) {
+                const existing = await SELECT.one.from('ybp.Dimensions')
+                    .where`PartnerType_ID = ${req.data.PartnerType_ID} 
+                                AND Dim_id = ${req.data.Dim_id} 
+                                AND Dim_Status NOT IN ${['E0002', 'E0003', 'E0007', 'E0010']}`;;
 
+                if (existing)
+                    return req.error(400,
+                        `Dimension ID '${req.data.Dim_id}' already exists in membership`);
+            }
 
-        // // ── 5. AFTER CREATE/UPDATE PartnerTypes – Partner_status cascade ─
-
-        // this.after(['CREATE', 'UPDATE'], 'PartnerTypes', async (data, req) => {
-        //     if (data.Partner_ID)
-        //         await this._recalculatePartnerStatus(data.Partner_ID);
-        // });
-
-
-        // // ── 6. BOUND ACTION – recalculateStatus on Partner ───────────────
-
-        // this.on('recalculateStatus', 'Partner', async (req) => {
-        //     const { ID } = req.params[0];
-        //     await this._recalculatePartnerStatus(ID);
-        //     return SELECT.one.from('ybp.Partner').where({ ID });
-        // });
+            if (!req.data.Dim_Status)
+                req.data.Dim_Status = 'E0001';
+        });
 
 
-        // // ── 7. BOUND ACTION – recalculatePTStatus on PartnerTypes ────────
+        this.after(['CREATE', 'UPDATE'], 'Dimensions', async (data, req) => {
 
-        // this.on('recalculatePTStatus', 'PartnerTypes', async (req) => {
-        //     const { ID } = req.params[0];
+            let partnerTypeId = data.PartnerType_ID;
 
-        //     const authorized = await SELECT.one
-        //         .from('ybp.Dimensions')
-        //         .where({ PartnerType_ID: ID, Dim_Status: 'E0005' });
+            if (!partnerTypeId) {
+                // PATCH: PartnerType_ID not in body, fetch using dimension key from URL
+                const dimId = data.ID || req.params?.[0]?.ID;
+                if (dimId) {
+                    const dim = await SELECT.one('PartnerType_ID')
+                        .from('ybp.Dimensions')
+                        .where({ ID: dimId });
+                    partnerTypeId = dim?.PartnerType_ID;
+                }
+            }
 
-        //     const newPTStatus = authorized ? 'E0005' : 'E0006';
+            if (!partnerTypeId) return;
 
-        //     await UPDATE('ybp.PartnerTypes')
-        //         .set({ PT_Status: newPTStatus })
-        //         .where({ ID });
+            // Check if any dimension under this membership is Authorized (E0005)
+            const authorized = await SELECT.one
+                .from('ybp.Dimensions')
+                .where({ PartnerType_ID: partnerTypeId, Dim_Status: 'E0005' });
 
-        //     const pt = await SELECT.one('Partner_ID')
-        //         .from('ybp.PartnerTypes')
-        //         .where({ ID });
+            // E0005 = Operational | E0006 = Under Review
+            const newPTStatus = authorized ? 'E0005' : data.Dim_Status;
 
-        //     if (pt) await this._recalculatePartnerStatus(pt.Partner_ID);
+            await UPDATE('ybp.PartnerTypes')
+                .set({ PT_Status: newPTStatus })
+                .where({ ID: partnerTypeId });
 
-        //     return SELECT.one.from('ybp.PartnerTypes').where({ ID });
-        // });
+            // Cascade up to Partner
+            const pt = await SELECT.one('Partner_ID')
+                .from('ybp.PartnerTypes')
+                .where({ ID: partnerTypeId });
+
+            if (pt) await this._recalculatePartnerStatus(pt.Partner_ID);
+        });
 
 
         await super.init(); //must be called so CAP can finish initialization.
     }
 
+    // Lives outside init() but inside the class
+    async _recalculatePartnerStatus(Partner_ID) {
+        const lv_operational = await SELECT.one.from('ybp.PartnerTypes')
+            .where({ Partner_ID: Partner_ID, PT_Status: 'E0005' });
 
-    // async _recalculatePartnerStatus(Partner_ID) {
-    //     const operational = await SELECT.one
-    //         .from('ybp.PartnerTypes')
-    //         .where({ Partner_ID, PT_Status: 'E0005' });
+        console.log('>>> operational found:', lv_operational);
 
-    //     const newStatus = operational ? 'E0002' : 'E0001';
+        // E0002 = Active  |  E0001 = Prospective Partner
+        const newStatus = lv_operational ? 'E0002' : 'E0001';
 
-    //     await UPDATE('ybp.Partner')
-    //         .set({ Partner_status: newStatus })
-    //         .where({ ID: Partner_ID });
-    // }
+        await UPDATE('ybp.Partner')
+            .set({ Partner_status: newStatus })
+            .where({ ID: Partner_ID });
+    }
+
 };
