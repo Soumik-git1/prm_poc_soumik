@@ -243,7 +243,7 @@ module.exports = class PartnerService extends cds.ApplicationService {
         await super.init(); //must be called so CAP can finish initialization.
     }
 
-    // Lives outside init() but inside the class
+    // Partner Status recalculation
     async _recalculatePartnerStatus(Partner_ID) {
         const lv_operational = await SELECT.one.from('ybp.PartnerTypes')
             .where({ Partner_ID: Partner_ID, PT_Status: 'E0005' });

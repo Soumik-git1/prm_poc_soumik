@@ -231,7 +231,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "Name_org"      : "Test partner Demo", 
+  "Name_org"      : "Test partner Demo 7", 
   "Country"       : "DE",
   "Partner_level" : "GOLD"
 }
@@ -242,11 +242,11 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "Partner_ID"      : "125956d6-e6e1-4d37-b2cd-59a1b590dbe0", 
+  "Partner_ID"      : "3f3f13b6-029e-4ca1-be86-0b16933ec204", 
   "Valid_from"      : "2026-09-15",
   "valid_to"        : "9999-12-31",
-  //"Partner_Type"    : "YVAR",
-  "Partner_Type"    : "YRUN",
+  "Partner_Type"    : "YVAR",
+  //"Partner_Type"    : "YRUN",
   //"PT_Status"       : "E0004",
   "PT_Status_Reason": ""
 }
@@ -257,7 +257,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "PartnerType_ID"   : "60388580-268a-4bd8-8d06-f549e8ca578c",
+  "PartnerType_ID"   : "87d6ee99-27d0-49c0-ae53-8ca29695fd23",
   "Dim_id"           : "YABC",
   "Valid_from"       : "2026-09-15",
   "valid_to"         : "9999-12-31",
@@ -271,7 +271,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "PartnerType_ID"   : "60388580-268a-4bd8-8d06-f549e8ca578c",
+  "PartnerType_ID"   : "87d6ee99-27d0-49c0-ae53-8ca29695fd23",
   "Dim_id"           : "YDEF",
   "Valid_from"       : "2026-09-15",
   "valid_to"         : "9999-12-31",
@@ -281,7 +281,7 @@ Accept: application/json
 
 
 ###Change Dimension status
-PATCH http://localhost:4004/partner/Dimensions(6c983db6-12fc-4690-8eeb-ac2cf085fe7f)
+PATCH http://localhost:4004/partner/Dimensions(4d70ab8f-746c-4b2d-9348-bfab05a886bf)
 Content-Type: application/json
 Accept: application/json
 
